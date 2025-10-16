@@ -10,6 +10,8 @@ public enum ErrorCode {
     // user
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."),
 
+    // point
+    POINT_BALANCE_OVER(HttpStatus.CONFLICT, "포인트 잔액이 최대를 초과헀습니다."),
     ;
 
     private final HttpStatus httpStatus;
