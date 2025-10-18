@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.common.response.ErrorCode;
+import io.hhplus.tdd.common.util.Lock;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.common.exception.BaseException;
@@ -8,12 +9,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @RequiredArgsConstructor
 public class PointService {
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
+    private final Lock lock;
 
     public UserPoint point(long id) {
         if (id <= 0L) {
@@ -36,11 +39,16 @@ public class PointService {
             throw new BaseException(ErrorCode.USER_NOT_FOUND);
         }
 
-        UserPoint userPoint = userPointTable.selectById(id);
-        long chargedPoint = userPoint.chargedPoint(amount);
-        UserPoint result = userPointTable.insertOrUpdate(id, chargedPoint);
-        pointHistoryTable.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis());
-        return result;
+        lock.lock(id);
+        try {
+            UserPoint userPoint = userPointTable.selectById(id);
+            long chargedPoint = userPoint.chargedPoint(amount);
+            UserPoint result = userPointTable.insertOrUpdate(id, chargedPoint);
+            pointHistoryTable.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis());
+            return result;
+        } finally {
+            lock.unlock(id);
+        }
     }
 
     public UserPoint use(long id, long amount) {
@@ -48,10 +56,15 @@ public class PointService {
             throw new BaseException(ErrorCode.USER_NOT_FOUND);
         }
 
-        UserPoint userPoint = userPointTable.selectById(id);
-        long leftPoint = userPoint.leftPointAfterUse(amount);
-        UserPoint result = userPointTable.insertOrUpdate(id, leftPoint);
-        pointHistoryTable.insert(id, amount, TransactionType.USE, System.currentTimeMillis());
-        return result;
+        lock.lock(id);
+        try {
+            UserPoint userPoint = userPointTable.selectById(id);
+            long leftPoint = userPoint.leftPointAfterUse(amount);
+            UserPoint result = userPointTable.insertOrUpdate(id, leftPoint);
+            pointHistoryTable.insert(id, amount, TransactionType.USE, System.currentTimeMillis());
+            return result;
+        } finally {
+            lock.unlock(id);
+        }
     }
 }

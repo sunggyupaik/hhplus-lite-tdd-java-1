@@ -2,6 +2,7 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.common.exception.BaseException;
 import io.hhplus.tdd.common.response.ErrorCode;
+import io.hhplus.tdd.common.util.Lock;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import org.junit.jupiter.api.Assertions;
@@ -27,12 +28,14 @@ class PointServiceTest {
     private PointService pointService;
     private UserPointTable userPointTable;
     private PointHistoryTable pointHistoryTable;
+    private Lock lock;
 
     @BeforeEach
     void setUp() {
         userPointTable = mock(UserPointTable.class);
         pointHistoryTable = mock(PointHistoryTable.class);
-        pointService = new PointService(userPointTable, pointHistoryTable);
+        lock = mock(Lock.class);
+        pointService = new PointService(userPointTable, pointHistoryTable, lock);
     }
 
     @Nested

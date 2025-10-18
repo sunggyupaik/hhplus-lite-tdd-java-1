@@ -2,6 +2,7 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.common.exception.BaseException;
 import io.hhplus.tdd.common.response.ErrorCode;
+import io.hhplus.tdd.common.util.Lock;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import org.junit.jupiter.api.Assertions;
