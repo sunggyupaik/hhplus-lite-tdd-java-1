@@ -18,7 +18,7 @@ public record UserPoint(
 
     public long chargedPoint(long amount) {
         if (amount < MIN_CHARGE_AMOUNT) {
-            throw new BaseException(ErrorCode.POINT_MORE_THAN_100);
+            throw new BaseException(ErrorCode.POINT_LESS_THAN_100);
         }
 
         if (this.point + amount > MAX_POINT) {
@@ -26,5 +26,17 @@ public record UserPoint(
         }
 
         return this.point + amount;
+    }
+
+    public long leftPointAfterUse(long amount) {
+        if (amount < MIN_CHARGE_AMOUNT) {
+            throw new BaseException(ErrorCode.POINT_LESS_THAN_100);
+        }
+
+        if (this.point - amount < MIN_POINT) {
+            throw new BaseException(ErrorCode.POINT_BALANCE_NEGATIVE);
+        }
+
+        return this.point - amount;
     }
 }

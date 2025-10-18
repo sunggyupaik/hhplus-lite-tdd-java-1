@@ -40,4 +40,14 @@ public class PointService {
         long chargedPoint = userPoint.chargedPoint(amount);
         return userPointTable.insertOrUpdate(id, chargedPoint);
     }
+
+    public UserPoint use(long id, long amount) {
+        if (id <= 0L) {
+            throw new BaseException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        UserPoint userPoint = userPointTable.selectById(id);
+        long leftPoint = userPoint.leftPointAfterUse(amount);
+        return userPointTable.insertOrUpdate(id, leftPoint);
+    }
 }
