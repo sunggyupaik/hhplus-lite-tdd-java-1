@@ -32,10 +32,12 @@ public class PointService {
     }
 
     public UserPoint charge(long id, long amount) {
+        if (id <= 0L) {
+            throw new BaseException(ErrorCode.USER_NOT_FOUND);
+        }
+
         UserPoint userPoint = userPointTable.selectById(id);
         long chargedPoint = userPoint.chargedPoint(amount);
-        userPointTable.insertOrUpdate(id, chargedPoint);
-
-        return userPoint;
+        return userPointTable.insertOrUpdate(id, chargedPoint);
     }
 }
