@@ -14,7 +14,9 @@ class ApiControllerAdvice extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(value = BaseException.class)
-    public ResponseEntity<ErrorResponse> handleBaseException(Exception e) {
-        return ResponseEntity.status(400).body(new ErrorResponse("400", e.getMessage()));
+    public ResponseEntity<ErrorResponse> handleBaseException(BaseException e) {
+        return ResponseEntity
+                .status(e.getErrorCode().getHttpStatus())
+                .body(new ErrorResponse(String.valueOf(e.getErrorCode().getHttpStatus().value()), e.getMessage()));
     }
 }
