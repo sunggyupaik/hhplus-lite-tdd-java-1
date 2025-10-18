@@ -214,7 +214,7 @@ class PointServiceTest {
         private static final TransactionType TRANSACTION_TYPE_USE = TransactionType.USE;
 
         UserPoint initUserPoint = new UserPoint(EXISTED_USER_ID, AMOUNT_4000, System.currentTimeMillis());
-        UserPoint leftUserPoint = new UserPoint(EXISTED_USER_ID, AMOUNT_1000, System.currentTimeMillis());
+        UserPoint leftUserPoint = new UserPoint(EXISTED_USER_ID, AMOUNT_3000, System.currentTimeMillis());
         PointHistory pointHistory = new PointHistory(EXISTED_POINT_HISTORY_ID, EXISTED_USER_ID, AMOUNT_1000, TRANSACTION_TYPE_USE, System.currentTimeMillis());
 
         @BeforeEach
@@ -232,8 +232,8 @@ class PointServiceTest {
             void it_returns_left_user_point_after_use() {
                 UserPoint userPoint = pointService.use(EXISTED_USER_ID, AMOUNT_1000);
 
-                Assertions.assertEquals(userPoint.point(), AMOUNT_1000,
-                        "기존 4000원에 요청금액 3000원을 뺀 1000원을 리턴한다");
+                Assertions.assertEquals(userPoint.point(), AMOUNT_3000,
+                        "기존 4000원에 사용 금액 1000원을 뺀 3000원을 리턴한다");
 
                 verify(userPointTable, times(1)).selectById(EXISTED_USER_ID);
                 verify(userPointTable, times(1)).insertOrUpdate(EXISTED_USER_ID, AMOUNT_3000);

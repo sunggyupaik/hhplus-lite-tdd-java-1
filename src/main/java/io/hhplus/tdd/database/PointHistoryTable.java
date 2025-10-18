@@ -35,4 +35,8 @@ public class PointHistoryTable {
 
         }
     }
+
+    public void deleteAll() {
+        table.clear();
+    }
 }

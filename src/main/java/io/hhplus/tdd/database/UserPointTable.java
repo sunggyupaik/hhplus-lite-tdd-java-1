@@ -27,6 +27,11 @@ public class UserPointTable {
         return userPoint;
     }
 
+    public void delete(long id) {
+        throttle(300);
+        table.put(id, UserPoint.empty(id));
+    }
+
     private void throttle(long millis) {
         try {
             TimeUnit.MILLISECONDS.sleep((long) (Math.random() * millis));
