@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -126,19 +128,23 @@ class PointServiceTest {
     @DisplayName("charge 메서드는")
     class Describe_of_charge {
         private static final long EXISTED_USER_ID = 1L;
+        private static final long EXISTED_POINT_HISTORY_ID = 1L;
         private static final long AMOUNT_50 = 50L;
         private static final long AMOUNT_1000 = 1000L;
         private static final long AMOUNT_3000 = 3000L;
         private static final long AMOUNT_4000 = 4000L;
         private static final long AMOUNT_100000 = 100000L;
+        private static final TransactionType TRANSACTION_TYPE_CHARGE = TransactionType.CHARGE;
 
         UserPoint initUserPoint = new UserPoint(EXISTED_USER_ID, AMOUNT_1000, System.currentTimeMillis());
         UserPoint chargedUserPoint = new UserPoint(EXISTED_USER_ID, AMOUNT_4000, System.currentTimeMillis());
+        PointHistory pointHistory = new PointHistory(EXISTED_POINT_HISTORY_ID, EXISTED_USER_ID, AMOUNT_3000, TRANSACTION_TYPE_CHARGE, System.currentTimeMillis());
 
         @BeforeEach
         void prepare() {
             when(userPointTable.selectById(EXISTED_USER_ID)).thenReturn(initUserPoint);
             when(userPointTable.insertOrUpdate(EXISTED_USER_ID, AMOUNT_4000)).thenReturn(chargedUserPoint);
+            when(pointHistoryTable.insert(eq(EXISTED_USER_ID), eq(AMOUNT_3000), eq(TRANSACTION_TYPE_CHARGE), anyLong())).thenReturn(pointHistory);
         }
 
         @Nested
@@ -150,10 +156,12 @@ class PointServiceTest {
                 UserPoint userPoint = pointService.charge(EXISTED_USER_ID, AMOUNT_3000);
 
                 Assertions.assertEquals(userPoint.point(), AMOUNT_4000,
-                        "기존 1000원에 요청금액 3000원을 더하여 4000원을 리턴한다");
+                        "기존 1000원에 충전 요청금액 3000원을 더하여 4000원을 리턴한다");
 
                 verify(userPointTable, times(1)).selectById(EXISTED_USER_ID);
                 verify(userPointTable, times(1)).insertOrUpdate(EXISTED_USER_ID, AMOUNT_4000);
+                verify(pointHistoryTable, times(1))
+                        .insert(eq(EXISTED_USER_ID), eq(AMOUNT_3000), eq(TRANSACTION_TYPE_CHARGE), anyLong());
             }
         }
 
@@ -197,19 +205,23 @@ class PointServiceTest {
     @DisplayName("use 메서드는")
     class Describe_of_use {
         private static final long EXISTED_USER_ID = 1L;
+        private static final long EXISTED_POINT_HISTORY_ID = 1L;
         private static final long AMOUNT_50 = 50L;
         private static final long AMOUNT_1000 = 1000L;
         private static final long AMOUNT_3000 = 3000L;
         private static final long AMOUNT_4000 = 4000L;
         private static final long AMOUNT_100000 = 100000L;
+        private static final TransactionType TRANSACTION_TYPE_USE = TransactionType.USE;
 
         UserPoint initUserPoint = new UserPoint(EXISTED_USER_ID, AMOUNT_4000, System.currentTimeMillis());
         UserPoint leftUserPoint = new UserPoint(EXISTED_USER_ID, AMOUNT_1000, System.currentTimeMillis());
+        PointHistory pointHistory = new PointHistory(EXISTED_POINT_HISTORY_ID, EXISTED_USER_ID, AMOUNT_1000, TRANSACTION_TYPE_USE, System.currentTimeMillis());
 
         @BeforeEach
         void prepare() {
             when(userPointTable.selectById(EXISTED_USER_ID)).thenReturn(initUserPoint);
             when(userPointTable.insertOrUpdate(EXISTED_USER_ID, AMOUNT_3000)).thenReturn(leftUserPoint);
+            when(pointHistoryTable.insert(eq(EXISTED_USER_ID), eq(AMOUNT_1000), eq(TRANSACTION_TYPE_USE), anyLong())).thenReturn(pointHistory);
         }
 
         @Nested
@@ -219,13 +231,14 @@ class PointServiceTest {
             @DisplayName("기존 금액에서 요청 금액을 뺀 유저포인트를 리턴한다")
             void it_returns_left_user_point_after_use() {
                 UserPoint userPoint = pointService.use(EXISTED_USER_ID, AMOUNT_1000);
-                System.out.println(userPoint);
 
                 Assertions.assertEquals(userPoint.point(), AMOUNT_1000,
                         "기존 4000원에 요청금액 3000원을 뺀 1000원을 리턴한다");
 
                 verify(userPointTable, times(1)).selectById(EXISTED_USER_ID);
                 verify(userPointTable, times(1)).insertOrUpdate(EXISTED_USER_ID, AMOUNT_3000);
+                verify(pointHistoryTable, times(1))
+                        .insert(eq(EXISTED_USER_ID), eq(AMOUNT_1000), eq(TRANSACTION_TYPE_USE), anyLong());
             }
         }
 
