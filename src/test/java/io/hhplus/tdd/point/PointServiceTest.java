@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.common.exception.BaseException;
+import io.hhplus.tdd.common.response.ErrorCode;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import org.junit.jupiter.api.Assertions;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -65,7 +67,11 @@ class PointServiceTest {
             @DisplayName("유효하지 않은 식별자라는 예외를 리턴한다")
             void it_throws_not_existed_user_id_exception() {
                 assertThatThrownBy(() -> pointService.point(NOT_EXISTED_USER_ID))
-                        .isInstanceOf(BaseException.class);
+                        .isInstanceOf(BaseException.class)
+                        .satisfies(ex -> {
+                            BaseException ce = (BaseException) ex;
+                            assertThat(ce.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+                        });
             }
         }
     }
@@ -119,7 +125,11 @@ class PointServiceTest {
             @DisplayName("유효하지 않은 식별자라는 예외를 리턴한다")
             void it_throws_not_existed_user_id_exception() {
                 assertThatThrownBy(() -> pointService.history(NOT_EXISTED_USER_ID))
-                        .isInstanceOf(BaseException.class);
+                        .isInstanceOf(BaseException.class)
+                        .satisfies(ex -> {
+                            BaseException ce = (BaseException) ex;
+                            assertThat(ce.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+                        });
             }
         }
     }
@@ -174,7 +184,11 @@ class PointServiceTest {
             @DisplayName("존재하지 않는 식별자라는 예외를 리턴한다")
             void it_throws_not_existed_user_id_exception() {
                 assertThatThrownBy(() -> pointService.charge(NOT_EXISTED_USER_ID, AMOUNT_3000))
-                        .isInstanceOf(BaseException.class);
+                        .isInstanceOf(BaseException.class)
+                        .satisfies(ex -> {
+                            BaseException ce = (BaseException) ex;
+                            assertThat(ce.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+                        });
             }
         }
 
@@ -185,7 +199,11 @@ class PointServiceTest {
             @DisplayName("충전금액을 초과했다는 예외를 던진다")
             void it_throws_over_max_amount_exception() {
                 assertThatThrownBy(() -> pointService.charge(EXISTED_USER_ID, AMOUNT_100000))
-                        .isInstanceOf(BaseException.class);
+                        .isInstanceOf(BaseException.class)
+                        .satisfies(ex -> {
+                            BaseException ce = (BaseException) ex;
+                            assertThat(ce.getErrorCode()).isEqualTo(ErrorCode.POINT_BALANCE_OVER);
+                        });
             }
         }
 
@@ -196,7 +214,11 @@ class PointServiceTest {
             @DisplayName("최소 100원 이상을 충전해야한다는 예외를 던진다")
             void it_throws_less_than_100_point_exception() {
                 assertThatThrownBy(() -> pointService.charge(EXISTED_USER_ID, AMOUNT_50))
-                        .isInstanceOf(BaseException.class);
+                        .isInstanceOf(BaseException.class)
+                        .satisfies(ex -> {
+                            BaseException ce = (BaseException) ex;
+                            assertThat(ce.getErrorCode()).isEqualTo(ErrorCode.POINT_LESS_THAN_100);
+                        });
             }
         }
     }
@@ -251,7 +273,11 @@ class PointServiceTest {
             @DisplayName("존재하지 않는 식별자라는 예외를 리턴한다")
             void it_throws_not_existed_user_id_exception() {
                 assertThatThrownBy(() -> pointService.use(NOT_EXISTED_USER_ID, AMOUNT_3000))
-                        .isInstanceOf(BaseException.class);
+                        .isInstanceOf(BaseException.class)
+                        .satisfies(ex -> {
+                            BaseException ce = (BaseException) ex;
+                            assertThat(ce.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+                        });
             }
         }
 
@@ -262,7 +288,11 @@ class PointServiceTest {
             @DisplayName("포인트 잔액은 0보다 커야한다는 예외를 던진다")
             void it_throws_over_using_possible_amount_exception() {
                 assertThatThrownBy(() -> pointService.use(EXISTED_USER_ID, AMOUNT_100000))
-                        .isInstanceOf(BaseException.class);
+                        .isInstanceOf(BaseException.class)
+                        .satisfies(ex -> {
+                            BaseException ce = (BaseException) ex;
+                            assertThat(ce.getErrorCode()).isEqualTo(ErrorCode.POINT_BALANCE_NEGATIVE);
+                        });
             }
         }
 
@@ -273,7 +303,11 @@ class PointServiceTest {
             @DisplayName("최소 100원 이상을 사용해야한다는 예외를 던진다")
             void it_throws_less_than_100_point_exception() {
                 assertThatThrownBy(() -> pointService.use(EXISTED_USER_ID, AMOUNT_50))
-                        .isInstanceOf(BaseException.class);
+                        .isInstanceOf(BaseException.class)
+                        .satisfies(ex -> {
+                            BaseException ce = (BaseException) ex;
+                            assertThat(ce.getErrorCode()).isEqualTo(ErrorCode.POINT_LESS_THAN_100);
+                        });
             }
         }
     }
