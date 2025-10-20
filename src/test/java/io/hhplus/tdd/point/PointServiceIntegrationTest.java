@@ -14,6 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,6 +27,119 @@ public class PointServiceIntegrationTest {
     @Autowired private PointService pointService;
     @Autowired private UserPointTable userPointTable;
     @Autowired private PointHistoryTable pointHistoryTable;
+
+    private static final long EXISTED_USER_ID = 1L;
+
+    @Test
+    @DisplayName("한명의 사용자가 동시에 여러번 포인트를 충전하면 순차적으로 충전이된다")
+    void givenUserPoint_whenChargeSeveralTimes_thenSumResultAndCreateHistory() throws InterruptedException {
+        final int threadCount = 100;
+        final long chargeAmount = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    pointService.charge(EXISTED_USER_ID, chargeAmount);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+
+        UserPoint userPoint = pointService.point(EXISTED_USER_ID);
+        Assertions.assertEquals(userPoint.point(), threadCount * chargeAmount,
+                "100원을 100번 동시에 충전하면 10000원이 충전된다");
+
+        List<PointHistory> histories = pointService.history(EXISTED_USER_ID);
+        Assertions.assertEquals(histories.size(), threadCount,
+                "충전을 100번하면 충전 이력 조회는 100개가 리턴된다");
+    }
+
+    @Test
+    @DisplayName("한명의 사용자가 동시에 여러번 포인트를 사용하면 순차적으로 사용이된다")
+    void givenUserPoint_whenUseSeveralTimes_thenSumResultAndCreateHistory() throws InterruptedException {
+        final int threadCount = 100;
+        final long amount = 100000;
+        final long useAmount = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        pointService.charge(EXISTED_USER_ID, amount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    pointService.use(EXISTED_USER_ID, useAmount);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+
+        UserPoint userPoint = pointService.point(EXISTED_USER_ID);
+        Assertions.assertEquals(userPoint.point(), amount - threadCount * useAmount,
+                "100000원 잔액에서 100원을 100번 동시에 사용하면 910000원이 남는다");
+
+        List<PointHistory> histories = pointService.history(EXISTED_USER_ID);
+        List<PointHistory> usedAmountHistories = histories
+                .stream()
+                .filter(pointHistory -> pointHistory.type().equals(TransactionType.USE))
+                .toList();
+
+        Assertions.assertEquals(usedAmountHistories.size(), threadCount,
+                "사용을 100번하면 사용 이력 조회는 100개가 리턴된다");
+    }
+
+    @Test
+    @DisplayName("한명의 사용자가 동시에 여러번 포인트를 충전 및 사용하면 순차적으로 합산이된다")
+    void givenUserPoint_whenUseAndChargeSeveralTimes_thenSumResultAndCreateHistory() throws InterruptedException {
+        final int threadCount = 100;
+        final long chargeAmount = 200;
+        final long useAmount = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    pointService.charge(EXISTED_USER_ID, chargeAmount);
+                    pointService.use(EXISTED_USER_ID, useAmount);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+
+        UserPoint userPoint = pointService.point(EXISTED_USER_ID);
+        Assertions.assertEquals(userPoint.point(), (chargeAmount - useAmount) * threadCount,
+                "200원 충전과 100원 사용을 100번하면 10000원이 남는다");
+
+        List<PointHistory> histories = pointService.history(EXISTED_USER_ID);
+        List<PointHistory> chargedAmountHistories = histories
+                .stream()
+                .filter(pointHistory -> pointHistory.type().equals(TransactionType.CHARGE))
+                .toList();
+
+        List<PointHistory> usedAmountHistories = histories
+                .stream()
+                .filter(pointHistory -> pointHistory.type().equals(TransactionType.USE))
+                .toList();
+
+
+        Assertions.assertEquals(chargedAmountHistories.size(), threadCount,
+                "충전을 100번하면 충전 이력 조회는 100개가 리턴된다");
+
+        Assertions.assertEquals(usedAmountHistories.size(), threadCount,
+                "사용을 100번하면 사용 이력 조회는 100개가 리턴된다");
+    }
 
     @Nested
     @DisplayName("charge 메서드는")
