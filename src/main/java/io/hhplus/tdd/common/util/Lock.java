@@ -12,14 +12,14 @@ public class Lock {
     private final Map<Long, ReentrantLock> lockTable = new HashMap<>();
 
     public void lock(long id) {
-        ReentrantLock reentrantLock = lockTable.getOrDefault(id, new ReentrantLock());
+        ReentrantLock reentrantLock = lockTable.getOrDefault(id, new ReentrantLock(true));
         lockTable.put(id, reentrantLock);
 
         reentrantLock.lock();
     }
 
     public void unlock(long id) {
-        ReentrantLock reentrantLock = lockTable.getOrDefault(id, new ReentrantLock());
+        ReentrantLock reentrantLock = lockTable.getOrDefault(id, new ReentrantLock(true));
         lockTable.put(id, reentrantLock);
 
         reentrantLock.unlock();
